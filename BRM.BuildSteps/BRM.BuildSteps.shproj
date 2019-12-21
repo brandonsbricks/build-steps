@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E6C2CD80-3BDF-4D23-B1F5-37A17A82A456}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="BRM.BuildSteps.projitems" Label="Shared" />
+
+  <!-- Custom Build Settings -->
+  <ItemGroup>
+    <_pdb Include="$(TargetDir)$(ProjectName).pdb" />
+    <_dll Include="$(TargetDir)$(ProjectName).dll" />
+    <_buildsFolder Include="$(SolutionDir)Builds\" />
+    <_mdb Include="$(SolutionDir)Builds\$(ProjectName).dll.mdb" />
+  </ItemGroup>
+  <Target Name="BeforeBuild">
+    <Delete Files="@(_dll)" />
+    <Delete Files="@(_pdb)" />
+    <Delete Files="@(_mdb)" />
+  </Target>
+  <Target Name="AfterBuild">
+    <Message Text="Building..."/>
+    <Copy SourceFiles="@(_dll)" DestinationFolder="@(_buildsFolder)" ContinueOnError="true" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(_pdb)" DestinationFolder="@(_buildsFolder)" ContinueOnError="true" SkipUnchangedFiles="false" />
+    <!--
+      For the mdb file to properly generate on windows...
+        1. Download a copy of pdb2mdb.exe from https://gist.github.com/jbevain/ba23149da8369e4a966f/raw/36b3cdd4dd149ab966bbb48141ef8ee2d37c890f/pdb2mdb.exe
+        2. Add the pdb2mdb.exe file location to the msbuild global properties
+          -File > Settings > Toolset and Build > MSBuild Global Properties
+          -Add variable "PDB2MDB" with the filePath (eg: "C:\Downloads\pdb2mdb.exe")
+          
+       For context, the pdb file is used for Unity's Mono C# compiler to find file names and line numbers for any logs otherwise obscured behind a .dll
+    -->
+    <Exec Command="$(PDB2MDB) @(_buildsFolder)$(ProjectName).dll" Condition=" '$(OS)' == 'Windows_NT' " ContinueOnError="true" />
+    <Message Text="Done building!"/>
+  </Target>
+  
+</Project>
