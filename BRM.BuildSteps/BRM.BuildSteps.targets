@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+
+Requirements
+  1. Navigate to File > Settings > Build, Execution, and Deployment > Toolset and Build > Build Engine 
+      - Uncheck the "Use ReSharper Build" checkbox  
+  
+Optional Steps (for generating .mdb files for debugging in unity, strongly recommended)
+  2. Download a copy of pdb2mdb.exe from https://gist.github.com/jbevain/ba23149da8369e4a966f/raw/36b3cdd4dd149ab966bbb48141ef8ee2d37c890f/pdb2mdb.exe
+  3. Add the pdb2mdb.exe file location to the msbuild global properties
+      - File > Settings > Toolset and Build > MSBuild Global Properties
+      - Add variable "PDB2MDB" with the filePath (eg: "C:\Downloads\pdb2mdb.exe")
+-->
+
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E6C2CD80-3BDF-4D23-B1F5-37A17A82A456}</ProjectGuid>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <_pdb Include="$(TargetDir)$(ProjectName).pdb" />
+    <_dll Include="$(TargetDir)$(ProjectName).dll" />
+    <_buildsFolder Include="$(ProjectDir)..\..\Builds\" />
+    <_mdb Include="$(ProjectDir)..\..\Builds\$(ProjectName).dll.mdb" />
+  </ItemGroup>
+  
+  <Target Name="BeforeBuild" BeforeTargets="Build">
+    <Delete Files="@(_dll)" />
+    <Delete Files="@(_pdb)" />
+    <Delete Files="@(_mdb)" />
+  </Target>
+  
+  <Target Name="AfterBuild" AfterTargets="Build">
+    <Message Text="Building..." Importance="high"/>
+    <Copy SourceFiles="@(_dll)" DestinationFolder="@(_buildsFolder)" ContinueOnError="true" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(_pdb)" DestinationFolder="@(_buildsFolder)" ContinueOnError="true" SkipUnchangedFiles="false" />
+    
+    <Exec Command="$(PDB2MDB) @(_buildsFolder)$(ProjectName).dll" Condition=" '$(OS)' == 'Windows_NT' " ContinueOnError="true" />
+    <Message Text="Done building!" Importance="high"/>
+  </Target>
+  
+</Project>
